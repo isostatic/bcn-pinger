@@ -1,0 +1,6 @@
+Alias /pinger /opt/bcn-pinger/webpage
+<Directory /opt/bcn-pinger/webpage>
+Require all granted
+AddHandler cgi-script .cgi
+Options +ExecCGI
+</Directory>

@@ -1,0 +1,13 @@
+#!/usr/bin/perl
+use strict;
+my $BASE = "/opt/bcn-pinger/";
+open(CONF, "<$BASE/etc/config");
+while (<CONF>) {
+	if (/^([^#,]+),/) {
+		my $ip = $1;
+		print "Start $ip\n";
+		my $cmd = "$BASE/bin/bcn-pinger $ip";
+		system("$cmd &");
+	}
+}
+close(CONF);

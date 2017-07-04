@@ -1,0 +1,12 @@
+Package: bcn-pinger
+Version: 1.0.__datestamp__
+Architecture: all
+Maintainer: Paul Weaver <paul.weaver.uk@gmail.com>
+Depends: perl, libcgi-pm-perl, libtimedate-perl, apache2
+Conflicts:
+Recommends:
+Section: web
+Priority: optional
+Installed-Size: 1000
+Description: Package that continually pings a given host and logs it
+ ping a host, 1 per second, date stamp every 60 pings, log it, and expose that via a webpage

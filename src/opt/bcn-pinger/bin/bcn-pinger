@@ -1,0 +1,14 @@
+#!/bin/bash
+IP=$1
+if [[ "$IP" == "" ]]
+then
+echo "Usage $0 8.8.8.8"
+exit
+fi
+
+LOG=/opt/bcn-pinger/log/$IP.log
+while (true)
+do date >> $LOG
+ping $IP -c 60 >> $LOG
+sleep 1
+done
