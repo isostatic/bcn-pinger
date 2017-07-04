@@ -20,7 +20,7 @@ if ($_log =~ /([0-9.]+)/) {
 	$log = "$BASE/log/$1.log";
 }
 if (! -f $log) {
-	print "Select a log\n\n";
+	print "Select a log<br>\n\n";
 	opendir(DIR,"$BASE/log/");
 	while (readdir(DIR)) {
 		next unless /([0-9.]+).log$/;
