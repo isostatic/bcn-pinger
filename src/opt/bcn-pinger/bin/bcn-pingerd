@@ -1,13 +1,29 @@
 #!/usr/bin/perl
 use strict;
-my $BASE = "/opt/bcn-pinger/";
-open(CONF, "<$BASE/etc/config");
-while (<CONF>) {
-	if (/^([^#,]+),/) {
-		my $ip = $1;
-		print "Start $ip\n";
-		my $cmd = "$BASE/bin/bcn-pinger $ip";
-		system("$cmd &");
-	}
+my $arg = @ARGV[0];
+if ($arg eq "status") {
+	system("ps -fu nobody | grep bcn-pinger");
+	exit;
 }
-close(CONF);
+if ($arg eq "stop") {
+	system("sudo -u nobody pkill bcn-pinger 2>/dev/null");
+	exit;
+}
+if ($arg eq "start" || $arg eq "restart") {
+	system("sudo -u nobody pkill bcn-pinger 2>/dev/null");
+	my $BASE = "/opt/bcn-pinger/";
+	open(CONF, "<$BASE/etc/config");
+	while (<CONF>) {
+		if (/^([^#,]+),/) {
+			my $ip = $1;
+			print "Start $ip\n";
+			my $cmd = "$BASE/bin/bcn-pinger $ip";
+			system("sudo -u nobody $cmd &");
+		}
+	}
+	close(CONF);
+	exit;
+}
+
+system("ps -fu nobody | grep bcn-pinger");
+

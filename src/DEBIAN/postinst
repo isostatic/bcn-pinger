@@ -2,6 +2,7 @@
 #set -e
 if [ "$1" = "configure" ]; then
 	chown nobody:nogroup /opt/bcn-pinger/log/
-	a2ensite bcn-pinger && service apache2 reload
+	chmod 755 /opt/bcn-pinger/webpage/readLog.cgi
+	a2enmod cgi && a2ensite bcn-pinger && service apache2 restart
 fi
 
