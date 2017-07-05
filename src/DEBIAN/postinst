@@ -4,5 +4,6 @@ if [ "$1" = "configure" ]; then
 	chown nobody:nogroup /opt/bcn-pinger/log/
 	chmod 755 /opt/bcn-pinger/webpage/readLog.cgi
 	a2enmod cgi && a2ensite bcn-pinger && service apache2 restart
+	update-rc.d bcn-pingerd defaults
 fi
 
