@@ -1,5 +1,6 @@
 #!/usr/bin/perl -T
 use strict;
+use Socket;
 use Date::Parse;
 use Date::Format;
 use CGI qw/param/;
@@ -15,7 +16,7 @@ my $TZ_num = "+0530"; my $TZ_name = "IST";
 my $log = "";
 my $ip = "";
 my $_log = param("log");
-if ($_log =~ /([0-9.]+)/) {
+if ($_log =~ /([a-z0-9.]+)/) {
 	$ip = $1;
 	$log = "$BASE/log/$1.log";
 }
@@ -23,8 +24,10 @@ if (! -f $log) {
 	print "Select a log<br>\n\n";
 	opendir(DIR,"$BASE/log/");
 	while (readdir(DIR)) {
-		next unless /([0-9.]+).log$/;
-		print "<a href='readLog.cgi?skip=1&log=$1'>$1</a><br>";
+		next unless /([a-z0-9.]+).log$/;
+		my $ip = $1;
+		my $hostname = gethostbyaddr(inet_aton($ip), AF_INET);
+		print "<a href='readLog.cgi?skip=1&log=$ip'>$ip</a> ($hostname)<br>";
 	}
 	closedir(DIR);
 	print "\n</body></html>\n";
