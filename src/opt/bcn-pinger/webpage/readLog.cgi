@@ -10,6 +10,7 @@ print "<html><body>\n";
 
 my $BASE = "/opt/bcn-pinger/";
 my $TZ_num = "+0530"; my $TZ_name = "IST";
+my $comment = "";
 my $comments = {};
 
 
