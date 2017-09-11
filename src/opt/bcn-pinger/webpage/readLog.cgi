@@ -10,6 +10,8 @@ print "<html><body>\n";
 
 my $BASE = "/opt/bcn-pinger/";
 my $TZ_num = "+0530"; my $TZ_name = "IST";
+my $comments = {};
+
 
 
 
@@ -20,25 +22,36 @@ if ($_log =~ /([a-z0-9.]+)/) {
 	$ip = $1;
 	$log = "$BASE/log/$1.log";
 }
+open(CONF, "<$BASE/etc/config");
+while (<CONF>) {
+	chomp;
+	my @a = split(/,/);
+	$comments->{@a[0]} = @a[3];
+}
 if (! -f $log) {
 	print "Select a log<br>\n\n";
 	opendir(DIR,"$BASE/log/");
+	my @out;
 	while (readdir(DIR)) {
 		next unless /([a-z0-9.]+).log$/;
 		my $ip = $1;
+		my $c = $comments->{$ip};
 		my $hostname = gethostbyaddr(inet_aton($ip), AF_INET);
-		print "<a href='readLog.cgi?skip=1&log=$ip'>$ip</a> ($hostname)<br>";
+		push (@out, "<a href='readLog.cgi?skip=1&log=$ip'>$ip</a> ($hostname) $c<br>");
 	}
 	closedir(DIR);
+	foreach (sort(@out)) { print; };
 	print "\n</body></html>\n";
 	exit 0;
 }
 
 open(CONF, "<$BASE/etc/config");
 while (<CONF>) {
-	if (/^$ip,([^,]*),(.*)/) {
+	chomp;
+	if (/^$ip,([^,]*),([^,]*),*(.*)/) {
 		$TZ_num = $1;
 		$TZ_name = $2;
+		if ($3 ne "") { $comment = $3; }
 		last;
 	}
 }
@@ -61,6 +74,7 @@ if ($hours == 99999) {
 } else {
 	print "(Only showing lines from the last $hours hours. <a href='readLog.cgi?log=$ip'>Show all lines</a>)<br>";
 }
+print "$comment<br>";
 print "<pre>";
 my $line = "";
 my $lostSome = 0;
