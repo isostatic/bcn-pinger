@@ -8,6 +8,7 @@ use CGI qw/param/;
 print "Content-Type: text/html\n\n";
 print "<html><body>\n";
 
+$ENV{PATH} = "";
 my $BASE = "/opt/bcn-pinger/";
 my $TZ_num = "+0530"; my $TZ_name = "IST";
 my $comment = "";
@@ -38,10 +39,13 @@ if (! -f $log) {
 		my $ip = $1;
 		my $c = $comments->{$ip};
 		my $hostname = gethostbyaddr(inet_aton($ip), AF_INET);
-		push (@out, "<a href='readLog.cgi?skip=1&log=$ip'>$ip</a> ($hostname) $c<br>");
+#		push (@out, "<a href='readLog.cgi?skip=1&log=$ip'>$ip</a> ($hostname) $c<br>");
+		push (@out, "<tr><td><a href='readLog.cgi?skip=1&hours=240&log=$ip'>$ip</a></td><td>$hostname</td><td>$c</td></tr>");
 	}
 	closedir(DIR);
+	print "<table border>";
 	foreach (sort(@out)) { print; };
+	print "</table>";
 	print "\n</body></html>\n";
 	exit 0;
 }
@@ -65,21 +69,23 @@ if (param("hours") =~ /([0-9]+)/) {
 
 my $skipGood = 0;
 if (param("skip")) {
-	print "(Only showing minutes with losses, <a href='readLog.cgi?log=$ip'>Show all lines</a>)<br>";
+	print "Not showing bad lines: (<a href='readLog.cgi?log=$ip&hours=24'>Show all lines from the last 24 hours</a> <a href='readLog.cgi?log=$ip&hours=240'>Show all lines from the last 10 days</a> <a href='readLog.cgi?log=$ip'>Show all lines</a>)<br>";
 	$skipGood = 1;
 } else {
 	print "(<a href='readLog.cgi?log=$ip&skip=1'>Only show lines when there were losses</a>)<br>";
 }
 if ($hours == 99999) {
-	print "(<a href='readLog.cgi?log=$ip&hours=24'>Only show lines from the last 24 hours</a>)<br>";
+	print "(<a href='readLog.cgi?log=$ip&hours=24'>Only show lines from the last 24 hours</a> <a href='readLog.cgi?log=$ip&hours=240'>Only show lines from the last 10 days</a>)<br>";
 } else {
-	print "(Only showing lines from the last $hours hours. <a href='readLog.cgi?log=$ip'>Show all lines</a>)<br>";
+	print "(Only showing lines from the last $hours hours. ";
+	print "<a href='readLog.cgi?log=$ip&skip=1&hours=24'>Show bad lines from the last 24 hours</a> <a href='readLog.cgi?log=$ip&skip=1&hours=240'>Show bad lines from the last 10 days</a> <a href='readLog.cgi?log=$ip'>Show all bad lines</a>)<br>";
 }
 print "$comment<br>";
 print "<pre>";
 my $line = "";
 my $lostSome = 0;
-open(LOG, "<$log");
+my $lines = 1000 + ($hours * 4000);
+open(LOG, "/usr/bin/tail -n$lines $log|");
 my $now = time();
 while (<LOG>) {
 	chomp;
