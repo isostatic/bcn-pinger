@@ -89,7 +89,7 @@ open(LOG, "/usr/bin/tail -n$lines $log|");
 my $now = time();
 while (<LOG>) {
 	chomp;
-	if (/(.*2017)$/) { 
+	if (/(.*201[789])$/) { 
 		my $local = $1;
 		my $time = str2time($local);
 		my $GMT = time2str("%T %Z", $time, "GMT");
