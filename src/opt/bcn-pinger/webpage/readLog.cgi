@@ -6,7 +6,20 @@ use Date::Format;
 use CGI qw/param/;
 
 print "Content-Type: text/html\n\n";
-print "<html><body>\n";
+print "<html>
+<head>
+<style>
+.expand {
+    text-decoration: none;
+}
+.detail {
+	display: none;
+}
+</style>
+<script src='jquery.js'></script> 
+<script src='readLog.js'></script> 
+</head>
+<body>\n";
 
 $ENV{PATH} = "";
 my $BASE = "/opt/bcn-pinger/";
@@ -82,6 +95,7 @@ if ($hours == 99999) {
 }
 print "$comment<br>";
 print "<pre>";
+my $line = "";
 my $lostSome = 0;
 my $lines = 1000 + ($hours * 4000);
 
@@ -115,6 +129,7 @@ foreach my $toR (@toRead) {
 	open(LOG, "$cat $toR | /usr/bin/tail -n$lines |");
 	my $now = time();
 	my $line = "";
+	my $detail = "";
 	while (<LOG>) {
 		chomp;
 		if (/(.*201[789])$/) { 
@@ -126,9 +141,13 @@ foreach my $toR (@toRead) {
 			if ($time + (3600*$hours) > $now) { 
 				if ($skipGood == 0 || $lostSome == 1) {
 					print $line;
+					print " <a href='#' class='expand'>+</a><div class='detail'>$detail</div>";
 				}
 			}
+			$detail = "\t$local\n";
 			$line = "\n$local ($GMT, $IST) onwards: "; 
+		} else {
+			$detail .= "\t$_\n";
 		}
 		if (/([0-9]+) packets transmitted, ([0-9]+) received, /) { 
 			$lostSome = 0;
