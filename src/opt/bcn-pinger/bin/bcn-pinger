@@ -7,8 +7,17 @@ exit
 fi
 
 LOG=/opt/bcn-pinger/log/$IP.log
+LASTDATE=`date +%F`
+
 while (true)
 do date >> $LOG
 ping $IP -c 60 >> $LOG
 sleep 1
+NOWDATE=`date +%F`
+if [[ "$LASTDATE" != "$NOWDATE" ]]
+then
+mv $LOG $LOG.$LASTDATE
+bzip2 $LOG.$LASTDATE
+fi
+LASTDATE=$NOWDATE
 done

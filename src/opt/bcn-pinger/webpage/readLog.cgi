@@ -1,4 +1,4 @@
-#!/usr/bin/perl -T
+#!/usr/bin/perl 
 use strict;
 use Socket;
 use Date::Parse;
@@ -82,42 +82,74 @@ if ($hours == 99999) {
 }
 print "$comment<br>";
 print "<pre>";
-my $line = "";
 my $lostSome = 0;
 my $lines = 1000 + ($hours * 4000);
-open(LOG, "/usr/bin/tail -n$lines $log|");
-my $now = time();
-while (<LOG>) {
-	chomp;
-	if (/(.*201[789])$/) { 
-		my $local = $1;
-		my $time = str2time($local);
-		my $GMT = time2str("%T %Z", $time, "GMT");
-		my $IST = time2str("%T %Z", $time, "$TZ_num"); 
-		$IST =~ s/\Q$TZ_num/$TZ_name/;
-		if ($time + (3600*$hours) > $now) { 
-			if ($skipGood == 0 || $lostSome == 1) {
-				print $line;
-			}
+
+my $maxage = (24+$hours) * 3600;
+
+
+#print "Tail $lines of $log in last $hours hours\n";
+
+my @toRead = ();
+
+opendir(LOGDIR, "$BASE/log");
+while (readdir LOGDIR) {
+	my $full = "$BASE/log/$_";
+	next unless ($full =~ /$log/);
+	my @stats = stat($full);
+	my $age = time - @stats[9];
+	if ($maxage > $age) {
+		if ($full =~ /.bz2$/) {
+			push(@toRead, $full);
 		}
-		$line = "\n$local ($GMT, $IST) onwards: "; 
-	}
-	if (/([0-9]+) packets transmitted, ([0-9]+) received, /) { 
-		$lostSome = 0;
-		if ($1 != $2) { $lostSome = 1; }
-		$line .= "received $2/$1: "; 
-	}
-	if (/rtt min.avg.max.mdev = ([^ ]*) ms/) { 
-		my $mamd = $1;
-		my ($min, $avg, $max, $dev) = split(/\//, $mamd);
-		my $PATH="PATH unknown "; 
-		# hard coded values FIXME
-		if ($min < 160) { $PATH = "PATH 1"; }
-		elsif ($min > 210 && $min < 250) { $PATH = "PATH 2"; }
-		elsif ($min > 400  && $min < 500) { $PATH = "PATH 3"; }
-		if ($ip !~ /172.26./) { $PATH = ""; }
-		$line .= "$PATH rtt (min,avg,max,dev) $mamd"; 
 	}
 }
-close(LOG);
+closedir(LOGDIR);
+@toRead = sort(@toRead);
+push(@toRead, $log);
+
+foreach my $toR (@toRead) {
+	my $cat = "/bin/cat";
+	if ($toR =~ /bz2$/) { $cat = "/bin/bzcat"; }
+#	print "READ $cat $toR\n";
+	open(LOG, "$cat $toR | /usr/bin/tail -n$lines |");
+	my $now = time();
+	my $line = "";
+	while (<LOG>) {
+		chomp;
+		if (/(.*201[789])$/) { 
+			my $local = $1;
+			my $time = str2time($local);
+			my $GMT = time2str("%T %Z", $time, "GMT");
+			my $IST = time2str("%T %Z", $time, "$TZ_num"); 
+			$IST =~ s/\Q$TZ_num/$TZ_name/;
+			if ($time + (3600*$hours) > $now) { 
+				if ($skipGood == 0 || $lostSome == 1) {
+					print $line;
+				}
+			}
+			$line = "\n$local ($GMT, $IST) onwards: "; 
+		}
+		if (/([0-9]+) packets transmitted, ([0-9]+) received, /) { 
+			$lostSome = 0;
+			if ($1 != $2) { $lostSome = 1; }
+			$line .= "received $2/$1: "; 
+		}
+		if (/rtt min.avg.max.mdev = ([^ ]*) ms/) { 
+			my $mamd = $1;
+			my ($min, $avg, $max, $dev) = split(/\//, $mamd);
+			my $PATH="PATH unknown "; 
+			# hard coded values FIXME
+			if ($min < 160) { $PATH = "PATH 1"; }
+			elsif ($min > 210 && $min < 250) { $PATH = "PATH 2"; }
+			elsif ($min > 400  && $min < 500) { $PATH = "PATH 3"; }
+			if ($ip !~ /172.26./) { $PATH = ""; }
+			$line .= "$PATH rtt (min,avg,max,dev) $mamd"; 
+		}
+	}
+	close(LOG);
+	if ($skipGood == 0 || $lostSome == 1) {
+		print $line;
+	}
+}
 print "\n</body></html>\n";
