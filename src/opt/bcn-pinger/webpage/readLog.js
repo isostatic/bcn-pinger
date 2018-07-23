@@ -7,5 +7,6 @@ $(function() {
 			$(this).next().hide();
 			$(this).text("+");
 		}
+		return false;
 	});
 });
