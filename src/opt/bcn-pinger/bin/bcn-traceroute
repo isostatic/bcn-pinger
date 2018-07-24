@@ -1,0 +1,27 @@
+#!/usr/bin/perl
+use strict;
+use Date::Format;
+my $BASE = "/opt/bcn-pinger/";
+open(CONF, "<$BASE/etc/config");
+while (<CONF>) {
+	if (/^([^#,]+),/) {
+		my $ip = $1;
+		my $time = time;
+		my $date = time2str("%Y-%m-%d", $time, "GMT");
+		my $datetime = time2str("%Y-%m-%d %T GMT", $time, "GMT");
+		
+		my $log = "$BASE/log/$ip.$date.trace";
+		open(LOG, ">>$log");
+		print LOG "$datetime Traceroute to $ip start\n";
+		my $cmd = "/usr/bin/mtr -rwbc5 $ip";
+		open(CMD, "$cmd|");
+		while (<CMD>) {
+			print LOG $_;
+		}
+		close(CMD);
+		print LOG "$datetime Traceroute to $ip end \n";
+		close(LOG);
+	}
+}
+close(CONF);
+
