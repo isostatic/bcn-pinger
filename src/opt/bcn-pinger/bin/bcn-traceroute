@@ -19,6 +19,8 @@ while (<CONF>) {
 			print LOG $_;
 		}
 		close(CMD);
+		$time = time;
+		$datetime = time2str("%Y-%m-%d %T GMT", $time, "GMT");
 		print LOG "$datetime Traceroute to $ip end \n";
 		close(LOG);
 	}
