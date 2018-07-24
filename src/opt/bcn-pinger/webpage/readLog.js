@@ -1,4 +1,17 @@
 $(function() {
+	$(".traceroute").click(function () {
+		var dte = $(this).attr("date");
+		var ip = $(this).attr("ip");
+		var url = "getTraceroute.cgi?log=" + encodeURIComponent(ip) + "&date=" + encodeURIComponent(dte);
+		var toFill = $(this).next();
+		$(this).hide();
+		console.log("get " + url);
+		$.get(url, function(d) {
+			$(toFill).html(d);
+			$(toFill).show();
+		});
+		return false;
+	});
 	$(".expand").click(function () {
 		if ($(this).text() == "+") {
 			$(this).next().show();

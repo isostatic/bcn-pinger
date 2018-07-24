@@ -13,6 +13,11 @@ print "<html>
     text-decoration: none;
 	display: none;
 }
+.trace {
+	display: none;
+	padding-left: 20px;
+	border: thin blue solid;
+}
 .detail {
 	display: none;
 }
@@ -39,7 +44,7 @@ my $ip = "";
 my $_log = param("log");
 if ($_log =~ /([a-z0-9.]+)/) {
 	$ip = $1;
-	$log = "$BASE/log/$1.log";
+	$log = "$BASE/log/$ip.log";
 }
 open(CONF, "<$BASE/etc/config");
 while (<CONF>) {
@@ -143,13 +148,21 @@ foreach my $toR (@toRead) {
 			my $local = $1;
 			my $time = str2time($local);
 			$baseTime = $time;
+			my $gmstring = time2str("%Y-%m-%d %T %Z", $time, "GMT");
 			my $GMT = time2str("%T %Z", $time, "GMT");
 			my $IST = time2str("%T %Z", $time, "$TZ_num"); 
 			$IST =~ s/\Q$TZ_num/$TZ_name/;
 			if ($time + (3600*$hours) > $now) { 
 				if ($skipGood == 0 || $lostSome == 1) {
-					print $line;
+					my $printline = $line;
+					unless ($printline =~ /received 60.60/) {
+						if ($skipGood == 0) {
+							$printline =~ s/(received ..?\/..:)/<b style='color: red;'>$1<\/b>/;
+						}
+					}
+					print $printline;
 					print " <a href='#' class='expand'>+</a><div class='detail'>$detail</div>";
+					print " <a href='#' class='traceroute' ip='$ip' date='$gmstring'>rte</a><div class='trace'>&nbsp;</div>";
 				}
 			}
 			$lastSeq = 0;
