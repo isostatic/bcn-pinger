@@ -11,9 +11,13 @@ print "<html>
 <style>
 .expand {
     text-decoration: none;
+	display: none;
 }
 .detail {
 	display: none;
+}
+.missing {
+	color: red;
 }
 </style>
 <script src='jquery.js'></script> 
@@ -94,6 +98,7 @@ if ($hours == 99999) {
 	print "<a href='readLog.cgi?log=$ip&skip=1&hours=24'>Show bad lines from the last 24 hours</a> <a href='readLog.cgi?log=$ip&skip=1&hours=240'>Show bad lines from the last 10 days</a> <a href='readLog.cgi?log=$ip'>Show all bad lines</a>)<br>";
 }
 print "$comment<br>";
+print "<div class='loading'>....loading....</div>";
 print "<pre>";
 my $line = "";
 my $lostSome = 0;
@@ -130,11 +135,14 @@ foreach my $toR (@toRead) {
 	my $now = time();
 	my $line = "";
 	my $detail = "";
+	my $lastSeq = 0;
+	my $baseTime = 0;
 	while (<LOG>) {
 		chomp;
 		if (/(.*201[789])$/) { 
 			my $local = $1;
 			my $time = str2time($local);
+			$baseTime = $time;
 			my $GMT = time2str("%T %Z", $time, "GMT");
 			my $IST = time2str("%T %Z", $time, "$TZ_num"); 
 			$IST =~ s/\Q$TZ_num/$TZ_name/;
@@ -144,10 +152,27 @@ foreach my $toR (@toRead) {
 					print " <a href='#' class='expand'>+</a><div class='detail'>$detail</div>";
 				}
 			}
+			$lastSeq = 0;
 			$detail = "\t$local\n";
 			$line = "\n$local ($GMT, $IST) onwards: "; 
 		} else {
-			$detail .= "\t$_\n";
+			my $date = "";
+			if ($_ =~ /icmp_seq=([0-9]*) /) {
+				unless ($lastSeq + 1 == $1) {
+					my $numMiss = $1 - $lastSeq - 1;
+					$detail .= "<span class='missing'>\t\t(missing $numMiss packets)</span>\n";
+				}
+				$lastSeq = $1;
+#				my $GMT = time2str("%T %Z", $baseTime + $lastSeq, "GMT"); ## this takes too long to run on server
+				my $thisTime = $baseTime + $lastSeq;
+				$date = " (<span class='toDate'>$thisTime</span>)";
+			} elsif ($_ =~ /ping statistics /) {
+				my $numMiss = 60 - $lastSeq; 
+				if ($numMiss > 0) { 
+					$detail .= "<span class='missing'>\t\t(missing $numMiss packets)</span>\n\n"; 
+				}
+			}
+			$detail .= "\t$_$date\n";
 		}
 		if (/([0-9]+) packets transmitted, ([0-9]+) received, /) { 
 			$lostSome = 0;
