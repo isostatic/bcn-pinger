@@ -3,8 +3,6 @@ Version: 1.0.__datestamp__
 Architecture: all
 Maintainer: Paul Weaver <paul.weaver.uk@gmail.com>
 Depends: perl, libcgi-pm-perl, libtimedate-perl, apache2
-Conflicts:
-Recommends:
 Section: web
 Priority: optional
 Installed-Size: 1000
