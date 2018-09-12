@@ -62,7 +62,7 @@ if (! -f $log) {
 		my $c = $comments->{$ip};
 		my $hostname = gethostbyaddr(inet_aton($ip), AF_INET);
 #		push (@out, "<a href='readLog.cgi?skip=1&log=$ip'>$ip</a> ($hostname) $c<br>");
-		push (@out, "<tr><td><a href='readLog.cgi?skip=1&hours=240&log=$ip'>$ip</a></td><td>$hostname</td><td>$c</td></tr>");
+		push (@out, "<tr><td><a href='readLog.cgi?skip=1&hours=240&log=$ip'>$ip</a> <a href='readLog.cgi?hours=24&log=$ip'>(today)</a></td><td>$hostname</td><td>$c</td></tr>");
 	}
 	closedir(DIR);
 	print "<table border>";
