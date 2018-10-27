@@ -91,16 +91,54 @@ if (param("hours") =~ /([0-9]+)/) {
 
 my $skipGood = 0;
 if (param("skip")) {
-	print "Not showing bad lines: (<a href='readLog.cgi?log=$ip&hours=24'>Show all lines from the last 24 hours</a> <a href='readLog.cgi?log=$ip&hours=240'>Show all lines from the last 10 days</a> <a href='readLog.cgi?log=$ip'>Show all lines</a>)<br>";
 	$skipGood = 1;
+}
+my $requireddate = "";
+if (param("date") =~ /(\d{4}-\d{2}-\d{2})/) {
+	$requireddate = $1;
+	my $rqTime = str2time("$requireddate", "GMT");
+	my $secsInPast = time()-$rqTime;
+	if ($secsInPast < (26*3600)) {
+		print "For current logs see <a href='readLog.cgi?log=$ip&hours=24&skip=$skipGood'>Last 24 hours</a><br>";
+	} else {
+		my $rqDateNice = time2str("%A %o %B %Y", $rqTime, "GMT");
+		$hours = 99999;
+		if ($skipGood) {
+			print "Showing only outages on <b>$rqDateNice</b>. <a href='readLog.cgi?log=$ip&date=$requireddate&skip=0'>Show all lines for $requireddate</a><br>";
+		} else {
+			print "Showing all lines on <b>$rqDateNice</b>. <a href='readLog.cgi?log=$ip&date=$requireddate&skip=1'>Show only outages for $requireddate</a><br>";
+		}
+		my @dates = qw/-28 -7 -1 0 1 7 28/;
+		foreach (@dates) {
+			my $targetTime = $rqTime+(($_+0.5)*86400);
+			if ($targetTime > time()) { 
+				next;
+			}
+			my $d = time2str("%Y-%m-%d", $targetTime, "GMT");
+			my $niced = time2str("%e-%b", $targetTime, "GMT");
+			if ($_ == 0) { 
+				print "<b>$niced</b> ";
+			} else {
+				print "<a href='readLog.cgi?log=$ip&date=$d&skip=$skipGood'>$niced</a> ";
+			}
+		}
+		print "<br>";
+	}
 } else {
-	print "(<a href='readLog.cgi?log=$ip&skip=1'>Only show lines when there were losses</a>)<br>";
+	if ($skipGood) {
+		print "Not showing bad lines: (<a href='readLog.cgi?log=$ip&hours=24'>Show all lines from the last 24 hours</a> <a href='readLog.cgi?log=$ip&hours=240'>Show all lines from the last 10 days</a> <a href='readLog.cgi?log=$ip'>Show all lines</a>)<br>";
+	} else {
+		print "(<a href='readLog.cgi?log=$ip&skip=1'>Only show lines when there were losses</a>)<br>";
+	}
 }
 if ($hours == 99999) {
 	print "(<a href='readLog.cgi?log=$ip&hours=24'>Only show lines from the last 24 hours</a> <a href='readLog.cgi?log=$ip&hours=240'>Only show lines from the last 10 days</a>)<br>";
 } else {
 	print "(Only showing lines from the last $hours hours. ";
 	print "<a href='readLog.cgi?log=$ip&skip=1&hours=24'>Show bad lines from the last 24 hours</a> <a href='readLog.cgi?log=$ip&skip=1&hours=240'>Show bad lines from the last 10 days</a> <a href='readLog.cgi?log=$ip'>Show all bad lines</a>)<br>";
+
+	my $d = time2str("%Y-%m-%d", time()-86400, "GMT");
+	print "<a href='readLog.cgi?log=$ip&skip=$skipGood&date=$d'>Show lines from yesterday ($d)</a><br>";
 }
 print "$comment<br>";
 print "<div class='loading'>....loading....</div>";
@@ -116,10 +154,17 @@ my $maxage = (24+$hours) * 3600;
 
 my @toRead = ();
 
+my @logdates = ();
 opendir(LOGDIR, "$BASE/log");
 while (readdir LOGDIR) {
-	my $full = "$BASE/log/$_";
+	my $file = $_;
+	my $full = "$BASE/log/$file";
 	next unless ($full =~ /$log/);
+	my $fdate = $file; $fdate =~ s/.bz2//; $fdate =~ s/.*log.//;
+	push(@logdates, $fdate) unless ($fdate =~ /log/);
+	if ($requireddate =~ /.../) {
+		next unless ($full =~ /$requireddate/);
+	}
 	my @stats = stat($full);
 	my $age = time - @stats[9];
 	if ($maxage > $age) {
@@ -130,7 +175,14 @@ while (readdir LOGDIR) {
 }
 closedir(LOGDIR);
 @toRead = sort(@toRead);
-push(@toRead, $log);
+if ($requireddate !~ /../) {
+	push(@toRead, $log);
+}
+if ($#toRead < 0 && $requireddate =~ /../) {
+	@logdates = sort(@logdates);
+	my $first = @logdates[0];
+	print "No logs found from $requireddate - earliest is <a href='readLog.cgi?log=$ip&date=$first&skip=$skipGood'>$first</a>";
+}
 
 foreach my $toR (@toRead) {
 	my $cat = "/bin/cat";
