@@ -25,7 +25,10 @@ print "<html>
 	color: red;
 }
 </style>
-<script src='jquery.js'></script> 
+<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.0/css/theme.default.min.css'>
+<script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
+<script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.0/js/jquery.tablesorter.min.js'></script>
+<script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.0/js/jquery.tablesorter.widgets.min.js'></script>
 <script src='readLog.js'></script> 
 </head>
 <body>\n";
@@ -41,6 +44,11 @@ my $comments = {};
 
 my $log = "";
 my $ip = "";
+my $filter = "";
+my $_filter = param("filter");
+if ($_filter =~ /([a-z0-9.-:]+)/) {
+	$filter = $1;
+}
 my $_log = param("log");
 if ($_log =~ /([a-z0-9.]+)/) {
 	$ip = $1;
@@ -65,9 +73,14 @@ if (! -f $log) {
 		push (@out, "<tr><td><a href='readLog.cgi?skip=1&hours=240&log=$ip'>$ip</a> <a href='readLog.cgi?hours=24&log=$ip'>(today)</a></td><td>$hostname</td><td>$c</td></tr>");
 	}
 	closedir(DIR);
-	print "<table border>";
+	
+	print "<table id='list'>";
+	my $ip_filter = "";
+	if ($filter =~ /ip:(.*)/) { $ip_filter = $1; }
+	print "<thead><th data-value='$ip_filter'>IP</th><th>Host</th><th> </th></thead>";
+	print "<tbody>";
 	foreach (sort(@out)) { print; };
-	print "</table>";
+	print "</tbody></table>";
 	print "\n</body></html>\n";
 	exit 0;
 }

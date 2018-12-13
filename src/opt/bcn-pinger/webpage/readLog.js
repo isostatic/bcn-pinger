@@ -1,4 +1,7 @@
 $(function() {
+	$("#list").tablesorter({
+		widgets: ["zebra", "filter"],
+	});
 	$(".traceroute").click(function () {
 		var dte = $(this).attr("date");
 		var ip = $(this).attr("ip");
