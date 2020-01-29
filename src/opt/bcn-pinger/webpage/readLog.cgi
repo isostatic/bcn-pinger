@@ -209,7 +209,7 @@ foreach my $toR (@toRead) {
 	my $baseTime = 0;
 	while (<LOG>) {
 		chomp;
-		if (/(.*201[789])$/) { 
+		if (/(.*20[12][0123456789])$/) { 
 			my $local = $1;
 			my $time = str2time($local);
 			$baseTime = $time;
