@@ -197,6 +197,9 @@ if ($#toRead < 0 && $requireddate =~ /../) {
 	print "No logs found from $requireddate - earliest is <a href='readLog.cgi?log=$ip&date=$first&skip=$skipGood'>$first</a>";
 }
 
+my $totalSent = 0;
+my $totalReceived = 0;
+
 foreach my $toR (@toRead) {
 	my $cat = "/bin/cat";
 	if ($toR =~ /bz2$/) { $cat = "/bin/bzcat"; }
@@ -220,6 +223,10 @@ foreach my $toR (@toRead) {
 			if ($time + (3600*$hours) > $now) { 
 				if ($skipGood == 0 || $lostSome == 1) {
 					my $printline = $line;
+                                        if ($printline =~ /received ([0-9]*)\/([0-9]*):/) {
+                                            $totalReceived += $1;
+                                            $totalSent += $2;
+                                        }
 					unless ($printline =~ /received 60.60/) {
 						if ($skipGood == 0) {
 							$printline =~ s/(received ..?\/..:)/<b style='color: red;'>$1<\/b>/;
@@ -274,4 +281,15 @@ foreach my $toR (@toRead) {
 		print $line;
 	}
 }
+
+
+my $precision = 100;
+my $totalLost = $totalSent - $totalReceived;
+
+my $oneIn = int($totalSent/$totalLost);
+
+my $totalThrough = int($precision*100*$totalReceived/$totalSent)/$precision;
+my $totalLostPC = int($precision*100*(1-$totalReceived/$totalSent))/$precision;
+
+print "<br><br>Total packets: $totalReceived/$totalSent. $totalThrough% got through, $totalLostPC% loss (1 in $oneIn).\n";
 print "\n</body></html>\n";
