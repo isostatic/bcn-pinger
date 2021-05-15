@@ -286,7 +286,8 @@ foreach my $toR (@toRead) {
 my $precision = 100;
 my $totalLost = $totalSent - $totalReceived;
 
-my $oneIn = int($totalSent/$totalLost);
+my $oneIn = "infinity";
+if ($totalLost > 0) { $oneIn = int($totalSent/$totalLost); }
 
 my $totalThrough = int($precision*100*$totalReceived/$totalSent)/$precision;
 my $totalLostPC = int($precision*100*(1-$totalReceived/$totalSent))/$precision;
