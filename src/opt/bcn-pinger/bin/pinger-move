@@ -1,1 +1,1 @@
-find /opt/bcn-pinger/log -mtime +30|sudo /opt/bcn-pinger/bin/rotate.pl > /dev/null 2>&1
+find /opt/bcn-pinger/log -mtime +30|/opt/bcn-pinger/bin/rotate.pl > /dev/null 2>&1
