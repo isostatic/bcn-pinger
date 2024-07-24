@@ -4,7 +4,18 @@ use Socket;
 use Date::Parse;
 use Date::Format;
 use CGI qw/param/;
+my $summCSV = 0;
+my $_summ = param("summ");
+if ($_summ == 2) { $summCSV = 2; }
+if ($_summ == 1) { $summCSV = 1; }
 
+
+if ($summCSV == 2) {
+    print "IP, Hostname, Comment, From, To, Took (seconds), packets received, packets sent, received%, lost%, one-in-X lost\n";
+    exit;
+}
+
+if ($summCSV == 0) {
 print "Content-Type: text/html\n\n";
 print "<html>
 <head>
@@ -32,6 +43,7 @@ print "<html>
 <script src='readLog.js'></script> 
 </head>
 <body>\n";
+}
 
 $ENV{PATH} = "";
 my $BASE = "/opt/bcn-pinger/";
@@ -40,6 +52,8 @@ my $comment = "";
 my $comments = {};
 
 
+my $firstTime = 0;
+my $lastTime = 0;
 
 
 my $log = "";
@@ -50,6 +64,7 @@ if ($_filter =~ /([a-z0-9.-:]+)/) {
 	$filter = $1;
 }
 my $_log = param("log");
+$_log =~ s/\.log$//;
 if ($_log =~ /([a-z0-9.]+)/) {
 	$ip = $1;
 	$log = "$BASE/log/$ip.log";
@@ -61,7 +76,7 @@ while (<CONF>) {
 	$comments->{@a[0]} = @a[3];
 }
 if (! -f $log) {
-	print "Select a log<br>\n\n";
+	if ($summCSV == 0) { print "Select a log<br>\n\n"; }
 	opendir(DIR,"$BASE/log/");
 	my @out;
 	while (readdir(DIR)) {
@@ -74,15 +89,17 @@ if (! -f $log) {
 	}
 	closedir(DIR);
 	
-	print "<table id='list'>";
-	my $ip_filter = "";
-	if ($filter =~ /ip:(.*)/) { $ip_filter = $1; }
-	print "<thead><th data-value='$ip_filter'>IP</th><th>Host</th><th> </th></thead>";
-	print "<tbody>";
-	foreach (sort(@out)) { print; };
-	print "</tbody></table>";
-	print "\n</body></html>\n";
-	exit 0;
+        if ($summCSV == 0) {
+        	print "<table id='list'>";
+        	my $ip_filter = "";
+        	if ($filter =~ /ip:(.*)/) { $ip_filter = $1; }
+        	print "<thead><th data-value='$ip_filter'>IP</th><th>Host</th><th> </th></thead>";
+        	print "<tbody>";
+        	foreach (sort(@out)) { print; };
+        	print "</tbody></table>";
+        	print "\n</body></html>\n";
+        }
+        exit 0;
 }
 
 open(CONF, "<$BASE/etc/config");
@@ -112,14 +129,14 @@ if (param("date") =~ /(\d{4}-\d{2}-\d{2})/) {
 	my $rqTime = str2time("$requireddate", "GMT");
 	my $secsInPast = time()-$rqTime;
 	if ($secsInPast < (26*3600)) {
-		print "For current logs see <a href='readLog.cgi?log=$ip&hours=24&skip=$skipGood'>Last 24 hours</a><br>";
+		if ($summCSV == 0)  { print "For current logs see <a href='readLog.cgi?log=$ip&hours=24&skip=$skipGood'>Last 24 hours</a><br>"; }
 	} else {
 		my $rqDateNice = time2str("%A %o %B %Y", $rqTime, "GMT");
 		$hours = 99999;
 		if ($skipGood) {
-			print "Showing only outages on <b>$rqDateNice</b>. <a href='readLog.cgi?log=$ip&date=$requireddate&skip=0'>Show all lines for $requireddate</a><br>";
+			if ($summCSV == 0) { print "Showing only outages on <b>$rqDateNice</b>. <a href='readLog.cgi?log=$ip&date=$requireddate&skip=0'>Show all lines for $requireddate</a><br>"; }
 		} else {
-			print "Showing all lines on <b>$rqDateNice</b>. <a href='readLog.cgi?log=$ip&date=$requireddate&skip=1'>Show only outages for $requireddate</a><br>";
+			if ($summCSV == 0) { print "Showing all lines on <b>$rqDateNice</b>. <a href='readLog.cgi?log=$ip&date=$requireddate&skip=1'>Show only outages for $requireddate</a><br>"; }
 		}
 		my @dates = qw/-28 -7 -1 0 1 7 28/;
 		foreach (@dates) {
@@ -130,32 +147,35 @@ if (param("date") =~ /(\d{4}-\d{2}-\d{2})/) {
 			my $d = time2str("%Y-%m-%d", $targetTime, "GMT");
 			my $niced = time2str("%e-%b", $targetTime, "GMT");
 			if ($_ == 0) { 
-				print "<b>$niced</b> ";
+				if ($summCSV == 0) { print "<b>$niced</b> "; }
 			} else {
-				print "<a href='readLog.cgi?log=$ip&date=$d&skip=$skipGood'>$niced</a> ";
+				if ($summCSV == 0) { print "<a href='readLog.cgi?log=$ip&date=$d&skip=$skipGood'>$niced</a> "; }
 			}
 		}
-		print "<br>";
+		if ($summCSV == 0) { print "<br>"; }
 	}
 } else {
 	if ($skipGood) {
-		print "Not showing bad lines: (<a href='readLog.cgi?log=$ip&hours=24'>Show all lines from the last 24 hours</a> <a href='readLog.cgi?log=$ip&hours=240'>Show all lines from the last 10 days</a> <a href='readLog.cgi?log=$ip'>Show all lines</a>)<br>";
+		if ($summCSV == 0) { print "Not showing bad lines: (<a href='readLog.cgi?log=$ip&hours=24'>Show all lines from the last 24 hours</a> <a href='readLog.cgi?log=$ip&hours=240'>Show all lines from the last 10 days</a> <a href='readLog.cgi?log=$ip'>Show all lines</a>)<br>"; }
 	} else {
-		print "(<a href='readLog.cgi?log=$ip&skip=1'>Only show lines when there were losses</a>)<br>";
+		if ($summCSV == 0) { print "(<a href='readLog.cgi?log=$ip&skip=1'>Only show lines when there were losses</a>)<br>"; }
 	}
 }
 if ($hours == 99999) {
-	print "(<a href='readLog.cgi?log=$ip&hours=24'>Only show lines from the last 24 hours</a> <a href='readLog.cgi?log=$ip&hours=240'>Only show lines from the last 10 days</a>)<br>";
+	if ($summCSV == 0) { print "(<a href='readLog.cgi?log=$ip&hours=24'>Only show lines from the last 24 hours</a> <a href='readLog.cgi?log=$ip&hours=240'>Only show lines from the last 10 days</a>)<br>"; }
 } else {
-	print "(Only showing lines from the last $hours hours. ";
-	print "<a href='readLog.cgi?log=$ip&skip=1&hours=24'>Show bad lines from the last 24 hours</a> <a href='readLog.cgi?log=$ip&skip=1&hours=240'>Show bad lines from the last 10 days</a> <a href='readLog.cgi?log=$ip'>Show all bad lines</a>)<br>";
-
-	my $d = time2str("%Y-%m-%d", time()-86400, "GMT");
-	print "<a href='readLog.cgi?log=$ip&skip=$skipGood&date=$d'>Show lines from yesterday ($d)</a><br>";
+	if ($summCSV == 0) { 
+            print "(Only showing lines from the last $hours hours. ";
+	    print "<a href='readLog.cgi?log=$ip&skip=1&hours=24'>Show bad lines from the last 24 hours</a> <a href='readLog.cgi?log=$ip&skip=1&hours=240'>Show bad lines from the last 10 days</a> <a href='readLog.cgi?log=$ip'>Show all bad lines</a>)<br>";
+	    my $d = time2str("%Y-%m-%d", time()-86400, "GMT");
+	    print "<a href='readLog.cgi?log=$ip&skip=$skipGood&date=$d'>Show lines from yesterday ($d)</a><br>";
+        }
 }
-print "$comment<br>";
-print "<div class='loading'>....loading....</div>";
-print "<pre>";
+if ($summCSV == 0) { 
+    print "$comment<br>";
+    print "<div class='loading'>....loading....</div>";
+    print "<pre>";
+}
 my $line = "";
 my $lostSome = 0;
 my $lines = 1000 + ($hours * 4000);
@@ -194,7 +214,7 @@ if ($requireddate !~ /../) {
 if ($#toRead < 0 && $requireddate =~ /../) {
 	@logdates = sort(@logdates);
 	my $first = @logdates[0];
-	print "No logs found from $requireddate - earliest is <a href='readLog.cgi?log=$ip&date=$first&skip=$skipGood'>$first</a>";
+	if ($summCSV == 0) { print "No logs found from $requireddate - earliest is <a href='readLog.cgi?log=$ip&date=$first&skip=$skipGood'>$first</a>"; }
 }
 
 my $totalSent = 0;
@@ -221,6 +241,11 @@ foreach my $toR (@toRead) {
 			my $IST = time2str("%T %Z", $time, "$TZ_num"); 
 			$IST =~ s/\Q$TZ_num/$TZ_name/;
 			if ($time + (3600*$hours) > $now) { 
+                            if ($firstTime < 0) { 
+                                $firstTime++;
+                            } elsif ($firstTime < 1000000) {
+                                $firstTime = $baseTime;
+                            }
 				if ($skipGood == 0 || $lostSome == 1) {
 					my $printline = $line;
                                         if ($printline =~ /received ([0-9]*)\/([0-9]*):/) {
@@ -232,9 +257,11 @@ foreach my $toR (@toRead) {
 							$printline =~ s/(received ..?\/..:)/<b style='color: red;'>$1<\/b>/;
 						}
 					}
-					print $printline;
-					print " <a href='#' class='expand'>+</a><div class='detail'>$detail</div>";
-					print " <a href='#' class='traceroute' ip='$ip' date='$gmstring'>rte</a><div class='trace'>&nbsp;</div>";
+                                        if ($summCSV == 0) {
+					    print $printline;
+					    print " <a href='#' class='expand'>+</a><div class='detail'>$detail</div>";
+					    print " <a href='#' class='traceroute' ip='$ip' date='$gmstring'>rte</a><div class='trace'>&nbsp;</div>";
+                                        }
 				}
 			}
 			$lastSeq = 0;
@@ -278,19 +305,33 @@ foreach my $toR (@toRead) {
 	}
 	close(LOG);
 	if ($skipGood == 0 || $lostSome == 1) {
-		print $line;
+		if ($summCSV == 0) {
+                    print $line;
+                }
 	}
+        $lastTime = $baseTime;
 }
-
 
 my $precision = 100;
 my $totalLost = $totalSent - $totalReceived;
 
-my $oneIn = "infinity";
+my $oneIn = "n/a";
 if ($totalLost > 0) { $oneIn = int($totalSent/$totalLost); }
 
+if ($totalSent == 0) { $totalSent = 1; }
 my $totalThrough = int($precision*100*$totalReceived/$totalSent)/$precision;
 my $totalLostPC = int($precision*100*(1-$totalReceived/$totalSent))/$precision;
 
-print "<br><br>Total packets: $totalReceived/$totalSent. $totalThrough% got through, $totalLostPC% loss (1 in $oneIn).\n";
-print "\n</body></html>\n";
+
+if ($summCSV == 1) {
+    #print("(Skipped outputting lines, this is the day's summary)\n");
+    my $fromString = time2str("%Y-%m-%d %T %Z", $firstTime, "GMT");
+    my $toString = time2str("%Y-%m-%d %T %Z", $lastTime, "GMT");
+    my $timeTook = $lastTime - $firstTime;
+    my $c = $comments->{$ip};
+    my $hostname = gethostbyaddr(inet_aton($ip), AF_INET);
+    print "$ip, $hostname, $c, $fromString, $toString, $timeTook, $totalReceived, $totalSent. $totalThrough%, $totalLostPC%, $oneIn\n"; 
+} else {
+    print "<br><br>Total packets: $totalReceived/$totalSent. $totalThrough% got through, $totalLostPC% loss (1 in $oneIn).\n";
+    print "\n</body></html>\n";
+}
