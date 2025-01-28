@@ -25,7 +25,7 @@ print(f"numRecentLogs={numRecentLogs}")
 print(f"df={df}")
 print(f"status={status}")
 
-if (status == "OK"):
+if (status != "OK"):
     os.popen("cat /opt/bcn-pinger/etc/config|grep -v \#|grep ,|cut -d , -f 1|sort|uniq > /tmp/pinger.health.expected").read()
     os.popen("/usr/bin/find /opt/bcn-pinger/log/ -name \"*.log\" -mmin -10|sed -e 's/.log$//' -e 's/.*log.//'|sort|uniq > /tmp/pinger.health.found").read()
     diff = os.popen("diff -y /tmp/pinger.health.expected /tmp/pinger.health.found").read().strip()
