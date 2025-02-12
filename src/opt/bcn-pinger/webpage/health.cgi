@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import os
+import re
 
 print("Content-Type: text/plain\n\n")
 
@@ -32,3 +33,12 @@ if (status != "OK"):
     print("================================================================================")
     print("* expected *                                                    * found *")
     print(diff)
+    print("================================================================================")
+    for line in diff.splitlines():
+        if ("<" in line):
+            _ip = line.split()[0]
+            match = re.search(r"([0-9.]+)", _ip)
+            if match:
+                ip = match.group(1)
+                print(f"sudo -u nobody /opt/bcn-pinger/bin/bcn-pinger {ip} &");
+                print("disown %1")
